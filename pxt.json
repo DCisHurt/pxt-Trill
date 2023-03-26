@@ -1,7 +1,7 @@
 {
-    "name": "test",
+    "name": "trill",
     "version": "0.0.0",
-    "description": "test",
+    "description": "A driver for trill family of capacitive sensors in MakeCode",
     "license": "MIT",
     "dependencies": {
         "core": "*",

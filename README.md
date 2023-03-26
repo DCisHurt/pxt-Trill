@@ -1,5 +1,6 @@
+# Trill
 
-> Open this page at [https://.github.io//](https://.github.io//)
+A driver for trill family of capacitive sensors in MakeCode.
 
 ## Use as Extension
 
@@ -16,7 +17,7 @@ To edit this repository in MakeCode.
 
 * open []()
 * click on **Import** then click on **Import URL**
-* paste **https://github.com/** and click import
+* paste **https://github.com/DCisHurt/pxt-Trill** and click import
 
 ## Blocks preview
 
