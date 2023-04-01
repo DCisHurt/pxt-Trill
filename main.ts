@@ -22,7 +22,7 @@ enum TrillDevice {
     TRILL_FLEX = 6
 };
 
-//% weight=29 color=#444444 icon="\uf577" block="Trill"
+//% weight=29 color=#444444 icon="\uf0a6" block="Trill"
 namespace Trill{
 
     enum MaxTouchNum{
@@ -76,11 +76,11 @@ namespace Trill{
      *@param prescaler [1-8] the sensitivity of the device
      *@param threshold [0-255] the noise threshold of the device
     */
-    //%block="set up %touchDevice|mode %touchMode|mode speed mode %speed|resolution %numBits|bits prescaler x%prescaler|noise threshold %threshold"
+    //%block="set up %touchDevice|in %touchMode|mode|speed %speed|resolution %numBits|bits prescaler x%prescaler|noise threshold %threshold"
     //%weight=31 %blockID="setup Trill"
-    //% numBits.min=9 index.max=16
-    //% prescaler.min=1 prescaler.max=8
-    //% threshold.min=0 threshold.max=255
+    //% numBits.min=9 numBits.max=16 .numBits=12
+    //% prescaler.min=1 prescaler.max=8 prescaler.defl=1
+    //% threshold.min=0 threshold.max=255 threshold.defl=16
     export function init(
         touchDevice: TrillDevice,
         speed: TrillSpeed,
