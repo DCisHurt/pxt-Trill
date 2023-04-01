@@ -1,6 +1,6 @@
 # pxt-trill
 
-This is a driver for MakeCode for the Trill capacitive sensor series base on [`Trill`](https://github.com/BelaPlatform/Trill) and [`Trill-Arduino`](https://github.com/BelaPlatform/Trill-Arduino).
+This is a driver for MakeCode for the Trill capacitive sensor series.
 
 ## Use as Extension
 
@@ -34,8 +34,8 @@ basic.forever(function () {
 
     let touch = Trill.numTouchRead();
     for (let j = 0; j <= touch; j++) {
-        let loc = Trill.touchRead(j);
-        let size = Trill.touchRead(j);
+        let loc = Trill.touchCoordinate(j);
+        let size = Trill.touchSize(j);
 
         serial.writeString("touch")
         serial.writeNumber(j)
@@ -52,6 +52,11 @@ basic.forever(function () {
 ## License
 
 MIT
+
+## Reference
+
+* [`Trill`](https://github.com/BelaPlatform/Trill)
+* [`Trill-Arduino`](https://github.com/BelaPlatform/Trill-Arduino)
 
 ### Metadata (used for search, rendering)
 

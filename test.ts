@@ -15,8 +15,8 @@ basic.forever(function () {
 
     let touch = Trill.numTouchRead();
     for (let j = 0; j <= touch; j++) {
-        let loc = Trill.touchRead(j);
-        let size = Trill.touchRead(j);
+        let loc = Trill.touchCoordinate(j);
+        let size = Trill.touchSize(j);
 
         serial.writeString("touch")
         serial.writeNumber(j)
