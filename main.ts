@@ -76,7 +76,8 @@ namespace Trill{
      *@param prescaler [1-8] the sensitivity of the device
      *@param threshold [0-255] the noise threshold of the device
     */
-    //%block="set up %touchDevice|in %touchMode|mode|speed %speed|resolution %numBits|bits prescaler x%prescaler|noise threshold %threshold"
+    //%block="set up %touchDevice | in mode %touchMode mode | with speed %speed speed | resolution %numBits bits | prescaler x%prescaler | noise threshold %threshold"
+    //% inlineInputMode=inline
     //%weight=31 %blockID="setup Trill"
     //% numBits.min=9 numBits.max=16 .numBits=12
     //% prescaler.min=1 prescaler.max=8 prescaler.defl=1
