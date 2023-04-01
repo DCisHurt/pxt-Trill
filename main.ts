@@ -1,8 +1,8 @@
 enum TrillSpeed {
-    TRILL_SPEED_ULTRA_FAST = 0,
-    TRILL_SPEED_FAST = 1,
-    TRILL_SPEED_NORMAL = 2,
-    TRILL_SPEED_SLOW =3
+    ULTRA_FAST = 0,
+    FAST = 1,
+    NORMAL = 2,
+    SLOW =3
 }
 
 enum TrillMode {
@@ -76,8 +76,11 @@ namespace Trill{
      *@param prescaler [1-8] the sensitivity of the device
      *@param threshold [0-255] the noise threshold of the device
     */
-    //%block="set up the %touchDevice| with %speed|in %touchMode mode|resolution is %numBits| prescaler x%prescaler|noise threshold %threshold"
+    //%block="set up %touchDevice|mode %touchMode|mode speed mode %speed|resolution %numBits|bits prescaler x%prescaler|noise threshold %threshold"
     //%weight=31 %blockID="setup Trill"
+    //% numBits.min=9 index.max=16
+    //% prescaler.min=1 prescaler.max=8
+    //% threshold.min=0 threshold.max=255
     export function init(
         touchDevice: TrillDevice,
         speed: TrillSpeed,
