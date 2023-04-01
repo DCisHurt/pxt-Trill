@@ -1,4 +1,4 @@
-# pxt-trill
+# Introduction
 
 This is a driver for MakeCode for the Trill capacitive sensor series.
 
