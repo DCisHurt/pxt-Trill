@@ -3,7 +3,7 @@
 
 Trill.init(
     TrillDevice.TRILL_BAR,
-    TrillSpeed.TRILL_SPEED_ULTRA_FAST,
+    TrillSpeed.ULTRA_FAST,
     TrillMode.AUTO,
     12,
     1,
