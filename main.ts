@@ -1,168 +1,297 @@
-
-serial.redirect(SerialPin.P0, SerialPin.P1, BaudRate.BaudRate31250)
-pins.digitalWritePin(DigitalPin.P8, 1)
-
-let lastA = false
-let lastB = false
-
-let noteA = 35
-let noteB = 39
-let velocity = 127
-
-let lastAng = 0
-let lastAng2 = 0
-let channel_1 = 1
-let channel_2 = 2
-
-basic.forever(function () {
-    let A = input.buttonIsPressed(Button.A)
-    let B = input.buttonIsPressed(Button.B)
-
-    let ang = pins.analogReadPin(AnalogPin.P1)
-    let ang2 = pins.analogReadPin(AnalogPin.P2)
-
-    if (A && !lastA) {
-        noteOnOff(true, channel_1, noteA, velocity)
-        pins.digitalWritePin(DigitalPin.P8, 0)
-    }
-    else if (!A && lastA) {
-        noteOnOff(false, channel_1, noteA, velocity)
-        pins.digitalWritePin(DigitalPin.P8, 1)
-    }
-        
-    if (B && !lastB) {
-        noteOnOff(true, channel_2, noteB, velocity)
-        // basic.showIcon(IconNames.Heart)
-    }
-    else if (!B && lastB) {
-        noteOnOff(false, channel_2, noteB, velocity)
-    }
-    if (Math.abs(lastAng - ang) >= 2) {
-        let pitch = (ang - 511) * 16
-        midiPitch(channel_1, pitch)
-    }
-    if (Math.abs(lastAng2 - ang2) >= 2) {
-        let pitch2 = (ang - 511) * 16
-        midiPitch(channel_2, pitch2)
-    }
-
-    lastAng = ang
-    lastAng2 = ang2
-    lastA = A
-    lastB = B
-    basic.pause(10)
-})
-
-function midiCC(ch: number, num: number, value: number): void{
-    let cc = 0xB0
-
-    let msgC = Buffer.create(3)
-    msgC[0] = cc | ch
-    msgC[1] = num
-    msgC[2] = value
-  
-    serial.writeBuffer(msgC)
+enum TrillSpeed {
+    TRILL_SPEED_ULTRA_FAST = 0,
+    TRILL_SPEED_FAST = 1,
+    TRILL_SPEED_NORMAL = 2,
+    TRILL_SPEED_SLOW =3
 }
 
-function noteOnOff(state: boolean, ch: number, note: number, vol: number): void{
-    let noteOn = 0x90
-    let noteOff = 0x80
+enum TrillMode {
+    AUTO = -1,
+    CENTROID = 0,
+    RAW = 1,
+    BASELINE = 2,
+    DIFF = 3
+};
 
-    let msgN = Buffer.create(3)
-    msgN[0] = (state? noteOn: noteOff) | ch
-    msgN[1] = note
-    msgN[2] = vol
-  
-    serial.writeBuffer(msgN)
-}
+enum TrillDevice {
+    TRILL_BAR = 1,
+    TRILL_SQUARE = 2,
+    TRILL_CRAFT = 3,
+    TRILL_RING = 4,
+    TRILL_HEX = 5,
+    TRILL_FLEX = 6
+};
 
+namespace Trill{
 
-function midiPitch(ch: number, shift: number): void{
-    let cc = 0xE0
-    let msgP = Buffer.create(3)
+    enum MaxTouchNum{
+        k1D = 5,
+        k2D = 4
+    };
     
-    shift = shift + 8192
+    enum Length{
+        kCentroidDefault = 20,
+        kCentroidRing = 24,
+        kCentroid2D = 32,
+        kRaw = 60
+    };
+    
+    enum Command{
+        kNone = 0,
+        kMode = 1,
+        kScanSettings = 2,
+        kPrescaler = 3,
+        kNoiseThreshold = 4,
+        kIdac = 5,
+        kBaselineUpdate = 6,
+        kMinimumSize = 7,
+        kAutoScanInterval = 16,
+        kIdentify = 255
+    };
+    
+    enum Offset{
+        kCommand = 0,
+        kData = 4
+    };
 
-    msgP[0] = cc | ch
-    msgP[1] = shift & 0x003F
-    msgP[2] = (shift - msgP[1]) >> 7
-  
-    serial.writeBuffer(msgP)
-}        
+    const commandDelay = 15;
 
+    let device: TrillDevice;
+    let address: number;
+    let mode: number;
+    let state: Offset;
+    let maxTouch: number;
+    let numTouch: number;
+    let rawData: Buffer;
+    let touchData: number[];
 
-// namespace ADS1015{
+    export function init(
+        touchDevice: TrillDevice,
+        speed: TrillSpeed,
+        touchMode: TrillMode,
+        numBits: number,
+        prescaler: number,
+        threshold: number
+    ): void {
 
-//     const ADS1015_ADDRESS = 0x48
+        device = touchDevice;
 
-//     const ADS1015_AIN0 = 0x40
-//     const ADS1015_AIN1 = 0x50
-//     const ADS1015_AIN2 = 0x60
-//     const ADS1015_AIN3 = 0x70
+        defaultSet();
 
-//     const ADS1015_GAIN_05 = 0x06
-//     const ADS1015_GAIN_1 = 0x04
-//     const ADS1015_GAIN_2 = 0x02
-//     const ADS1015_GAIN_3 = 0x00
+        if (touchMode == TrillMode.AUTO) {
+            setMode(mode);
+        }
+        else {
+            setMode(touchMode);
+        }
 
-//     function i2cwrite(addr: number, reg: number): void {
-//         let buf = pins.createBuffer(1);
-//         buf[0] = reg;
-//         pins.i2cWriteBuffer(addr, buf);
-//     }
+        rawData = pins.createBuffer(Length.kRaw);
 
-//     function i2cwrite2(addr: number, reg: number, value1: number, value2: number): void {
-//         let buf = pins.createBuffer(3);
-//         buf[0] = reg;
-//         buf[1] = value1;
-//         buf[2] = value2;
-//         pins.i2cWriteBuffer(addr, buf);
-//     }
+        // TODO: set 2D device
+        // if(is2D()) {
+        //     horizontal.centroids = buffer_ + 2 * MAX_TOUCH_1D_OR_2D;
+        //     horizontal.sizes = buffer_ + 3 * MAX_TOUCH_1D_OR_2D;
+        // } else
+        //     horizontal.num_touches = 0;
 
+        // Set default scan settings 
+        setScanSettings(speed, numBits);
 
-// 	/**
-//      *ReadData From ADS1015
-//      *Data Format = 3mV/FS
-// 	 * @param channel [0-3] choose ADC channel; eg: 0, 1
-// 	*/
-//     export function readPin(channel: number): number {
+        setPrescaler(prescaler);
 
-//         let val = 0x00;
+        setNoiseThreshold(threshold);
 
-//         switch (channel) {
-//             case 0:
-//                 val += ADS1015_AIN0;
-//                 break;
-//             case 1:
-//                 val += ADS1015_AIN1;
-//                 break;
-//             case 2:
-//                 val += ADS1015_AIN2;
-//                 break;
-//             case 3:
-//                 val += ADS1015_AIN3;
-//                 break;
-//         }
-//         //set gain in 3mV/FS
-//         val += ADS1015_GAIN_3;
+        updateBaseline();
 
-//         i2cwrite2(ADS1015_ADDRESS, 0x01, val, 0x83);
+        numTouch = 0;
+    }
 
-//         control.waitMicros(5000);
+    export function read(): void {
+        if (mode == TrillMode.CENTROID) {
+            
+            if (state == Offset.kCommand) {
+                i2cWriteCommand(Offset.kData);
+                state = Offset.kData;
+            }
 
-//         pins.i2cWriteNumber(ADS1015_ADDRESS, 0x00, NumberFormat.UInt8LE)
+            let length = Length.kCentroidDefault;
 
-//         control.waitMicros(500);
+            if (device == TrillDevice.TRILL_SQUARE || device == TrillDevice.TRILL_HEX) { length = Length.kCentroid2D; }
+            if (device == TrillDevice.TRILL_RING) { length = Length.kCentroidRing; }
+            
+            rawData = pins.i2cReadBuffer(address, length, false);
 
-//         let adc = pins.i2cReadBuffer(ADS1015_ADDRESS, 2);
-//         let data = ((parseInt("0x" + adc.toHex())) / 16)
+            let loc = 0;
 
-//         if (data > 2048) {
-//             return (data-4096)
-//         }
-//         else {
-//             return data
-//         }
-        
-//     }   
-// }
+            // Convert raw data to 16-bit values
+            while(loc <= length) {
+                touchData[loc] = (rawData[loc] << 8) + rawData[loc+1];
+                loc+=2;
+            }
+            
+            // Look for 1st instance of 0xFFFF (no touch) in the buffer
+            for(numTouch = 0; numTouch < maxTouch; ++numTouch)
+            {
+                if(0xffff == touchData[numTouch])
+                    break;// at the first non-touch, break
+            }
+
+            // TODO: fix 2D device
+            // if(is2D())
+            //     horizontal.processCentroids(maxTouch);
+        }
+    }
+
+    export function touchRead(index: number): number {
+        if (index <= numTouch) {
+            return touchData[index];
+        }
+        else {
+            return -1;
+        }
+    }
+
+    export function updateBaseline(): void {
+        i2cWriteCommand(Command.kBaselineUpdate);
+    }
+
+    export function numTouchRead(): number {
+        return numTouch;
+    }
+
+    function i2cWriteCommand(register: number, value1?: number, value2?: number): void {
+        let buf: Buffer;
+        if (typeof value2 !== 'undefined') {
+            buf = pins.createBuffer(4);
+            buf[0] = Offset.kCommand;
+            buf[1] = register;
+            buf[2] = value1;
+            buf[3] = value2;
+        }
+        else if (typeof value1 !== 'undefined') {
+            buf = pins.createBuffer(3);
+            buf[0] = Offset.kCommand;
+            buf[1] = register;
+            buf[2] = value1;
+        }
+        else {
+            buf = pins.createBuffer(2);
+            buf[0] = Offset.kCommand;
+            buf[1] = register;
+        }
+
+        pins.i2cWriteBuffer(address, buf);
+        state = Offset.kCommand;
+        basic.pause(commandDelay);
+    } 
+
+    function defaultSet(): void {
+        switch (device) {
+            case TrillDevice.TRILL_BAR:
+                address = 0x20;
+                mode = TrillMode.CENTROID;
+                maxTouch = MaxTouchNum.k1D;
+                break;
+            case TrillDevice.TRILL_SQUARE:
+                address = 0x28;
+                mode = TrillMode.CENTROID;
+                maxTouch = MaxTouchNum.k2D;
+                break;
+            case TrillDevice.TRILL_CRAFT:
+                address = 0x30;
+                mode = TrillMode.DIFF;
+                maxTouch = MaxTouchNum.k1D;
+                break;
+            case TrillDevice.TRILL_RING:
+                address = 0x38;
+                mode = TrillMode.CENTROID;
+                maxTouch = MaxTouchNum.k1D;
+                break;
+            case TrillDevice.TRILL_HEX:
+                address = 0x40;
+                mode = TrillMode.CENTROID;
+                maxTouch = MaxTouchNum.k2D;
+                break;
+            case TrillDevice.TRILL_FLEX:
+                address = 0x48;
+                mode = TrillMode.DIFF;
+                maxTouch = MaxTouchNum.k1D;
+                break;
+            default:
+                address = 0xFF;
+                mode = TrillMode.AUTO;
+                maxTouch = MaxTouchNum.k1D;
+                break;
+        }
+    }
+
+    function setMode(touchMode: TrillMode): void {
+        mode = touchMode;
+        i2cWriteCommand(Command.kMode, mode)
+        numTouch = 0;
+    }
+
+    function setScanSettings(speed: TrillSpeed, numBits: number): void {
+        if (speed > 3) { speed = 3; }
+        if (numBits < 9) { numBits = 9; }
+        if (numBits > 16) { numBits = 16; }
+
+        i2cWriteCommand(Command.kScanSettings, speed, numBits);
+    }
+
+    function setPrescaler(prescaler: number): void {
+        i2cWriteCommand(Command.kPrescaler, prescaler);
+    }
+    
+    function setNoiseThreshold(threshold: number): void {
+        if(threshold > 255)
+            threshold = 255;
+        if(threshold < 0)
+            threshold = 0;
+        i2cWriteCommand(Command.kNoiseThreshold, threshold);
+    }
+    
+    function setIDACValue(value: number): void {
+        i2cWriteCommand(Command.kIdac, value);
+    }
+    
+    function setMinimumTouchSize(size: number): void {      
+        i2cWriteCommand(Command.kMinimumSize, (size >> 8), (size & 0xFF));
+    }
+    
+    function setAutoScanInterval(interval: number): void {      
+        i2cWriteCommand(Command.kAutoScanInterval, (interval >> 8), (interval & 0xFF));
+    }
+
+    function getButtonValue(): number {
+        if ((mode != TrillMode.CENTROID) || (device != TrillDevice.TRILL_RING))
+        { return -1; }
+        else
+        { return 0; }
+        // { return buffer_[2 * maxTouch]; }
+    }
+    
+    function is1D(): boolean {
+        if(mode != TrillMode.CENTROID)
+            return false;
+        switch(device) {
+            case TrillDevice.TRILL_BAR:
+            case TrillDevice.TRILL_RING:
+            case TrillDevice.TRILL_CRAFT:
+            case TrillDevice.TRILL_FLEX:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    function is2D(): boolean {
+        switch(device) {
+            case TrillDevice.TRILL_SQUARE:
+            case TrillDevice.TRILL_HEX:
+                return true;
+            default:
+                return false;
+        }
+    }
+}
