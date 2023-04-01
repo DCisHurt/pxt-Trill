@@ -1,6 +1,6 @@
-# Trill
+# pxt-trill
 
-A driver for trill family of capacitive sensors in MakeCode.
+This is a driver for MakeCode for the Trill capacitive sensor series base on [`Trill`](https://github.com/BelaPlatform/Trill) and [`Trill-Arduino`](https://github.com/BelaPlatform/Trill-Arduino).
 
 ## Use as Extension
 
@@ -11,12 +11,7 @@ This repository can be added as an **extension** in MakeCode.
 * click on **Extensions** under the gearwheel menu
 * search for **<https://github.com/DCisHurt/pxt-Trill>** and import
 
-## Blocks preview
-
-This image shows the blocks code from the last commit in master.
-This image may take a few minutes to refresh.
-
-### Basic Usage
+## Basic Usage
 
 * initialize
 
@@ -54,4 +49,10 @@ basic.forever(function () {
 })
 ```
 
-<script src="https://makecode.com/gh-pages-embed.js"\></script\><script\>makeCodeRender("{{ site.makecode.home_url }}", "{{ site.github.owner_name }}/{{ site.github.repository_name }}");</script\>
+## License
+
+MIT
+
+### Metadata (used for search, rendering)
+
+<script src="https://makecode.com/gh-pages-embed.js"></script><script>makeCodeRender("{{ site.makecode.home_url }}", "{{ site.github.owner_name }}/{{ site.github.repository_name }}");</script>
