@@ -1,6 +1,14 @@
-# Introduction
+# pxt-Trill: a Trill driver for MakeCode Micro:bit
 
-This is a driver for MakeCode for the Trill capacitive sensor series.
+## Introduction
+
+This is a non-official driver for MakeCode for the Trill capacitive sensor series.
+
+* Get the modules at [Bela Shop](https://shop.bela.io/collections/trill).
+
+* The [Offical Tutorial](https://learn.bela.io/using-trill/settings-and-sensitivity) explains the different modes of operation and settings.
+
+* Blocky examples can be found on the [Github Page](https://dcishurt.github.io/pxt-Trill).
 
 ## Use as Extension
 
@@ -33,6 +41,8 @@ basic.forever(function () {
     Trill.read();
 
     let touch = Trill.numTouchRead();
+    serial.writeValue("touch", touch);
+    
     for (let j = 0; j <= touch; j++) {
         let loc = Trill.touchCoordinate(j);
         let size = Trill.touchSize(j);
