@@ -163,6 +163,20 @@ namespace Trill{
         }
     }
 
+
+    /**
+     *Get the raw of the touch points from index 0 to max
+     *@param index [0-100] the index of the touch point
+    */
+    //%block="raw data |%index|"
+    //%weight=399 %blockID="touch raw"
+    export function raw(index: number):  number {
+        
+        return rawData[index];
+        
+    }
+
+
     /**
      *Get the location of the touch points from index 0 to max
      *@param index [0-4] the index of the touch point
