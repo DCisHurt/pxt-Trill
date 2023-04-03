@@ -1,6 +1,6 @@
 {
     "name": "trill",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "description": "A driver for trill family of capacitive sensors in MakeCode",
     "license": "MIT",
     "dependencies": {
