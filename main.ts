@@ -102,7 +102,7 @@ namespace Trill{
         }
 
         rawData = pins.createBuffer(Length.kRaw);
-
+        touchData = [0x0001];
         // TODO: set 2D device
         // if(is2D()) {
         //     horizontal.centroids = buffer_ + 2 * MAX_TOUCH_1D_OR_2D;

@@ -1,5 +1,7 @@
 # pxt-Trill: a Trill driver for MakeCode Micro:bit
 
+> Open this page at [https://dcishurt.github.io/pxt-Trill](https://dcishurt.github.io/pxt-Trill)
+
 ## Introduction
 
 This is a non-official driver for MakeCode for the Trill capacitive sensor series.
