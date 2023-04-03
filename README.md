@@ -42,7 +42,7 @@ Trill.init(
 basic.forever(function () {
     Trill.read();
     let num = Trill.numTouchRead()
-    for (let j = 0; j <= num; j++) {
+    for (let j = 0; j < num; j++) {
         serial.writeNumber(j)
         serial.writeValue("r", Trill.touchCoordinate(j))
         serial.writeNumber(j)

@@ -22,6 +22,7 @@ enum TrillDevice {
     TRILL_FLEX = 6
 };
 
+//% weight=29 color=#444444 icon="\uf0a6" block="Trill"
 namespace Trill {
 
     enum MaxTouchNum {
@@ -65,6 +66,20 @@ namespace Trill {
     let rawData: Buffer;
     let touchData: number[];
 
+    /**
+     *initialize the Trill device
+     *@param touchDevice [1-6] the device type
+     *@param speed [0-3] the detect speed of the device
+     *@param touchMode [-1-3] the touch mode of the device
+     *@param numBits [9-16] the resolution of the device
+     *@param prescaler [1-8] the sensitivity of the device
+     *@param threshold [0-255] the noise threshold of the device
+    */
+    //%block="set up %touchDevice in mode %touchMode with speed %speed resolution %numBits prescaler x%prescaler noise threshold %threshold"
+    //%weight=31 %blockID="setup Trill"
+    //% numBits.min=9 numBits.max=16 numBits.defl=12
+    //% prescaler.min=1 prescaler.max=8 prescaler.defl=1
+    //% threshold.min=0 threshold.max=255 threshold.defl=16
     export function init(
         touchDevice: TrillDevice,
         touchMode: TrillMode,
@@ -100,7 +115,11 @@ namespace Trill {
         numTouch = 0;
     }
 
-
+    /**
+     *read the data from device
+    */
+    //%block="read data from Trill"
+    //%weight=31 %blockID="number of touch points"
     export function read(): void {
         if (mode == TrillMode.CENTROID) {
 
@@ -135,21 +154,45 @@ namespace Trill {
         }
     }
 
+    /**
+     *Get the location of the touch points from index 0 to max
+     *@param index [0-4] the index of the touch point
+    */
+    //%block="location of touch point |%index|"
+    //%weight=34 %blockID="touch Coordinate"
+    //% index.min=0 index.max=4
     export function touchCoordinate(index: number): number {
         if (index < numTouch) { return touchData[index]; }
         else { return 65535; }
         
     }
 
+    /**
+     *Get the size of the touch points from index 0 to max
+     *@param index [0-4] the index of the touch point
+    */
+    //%block="size of touch point |%index|"
+    //%weight=35 %blockID="touch size"
+    //% index.min=0 index.max=4
     export function touchSize(index: number): number {
         if (index < numTouch) { return touchData[index + maxTouch]; }
         else { return 0; }
     }
 
+    /**
+     *update the baseline of device
+    */
+    //%block="update touch baseline"
+    //% weight=32 %blockID="update topuch baseline"
     export function updateBaseline(): void {
         i2cWriteCommand(Command.kBaselineUpdate);
     }
-
+    
+    /**
+     *read the number of touch points
+    */
+    //%block="number of touch points"
+    //%weight=33 %blockID="number of touch points"
     export function numTouchRead(): number {
         return numTouch;
     }
