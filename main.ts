@@ -2,7 +2,7 @@ enum TrillSpeed {
     ULTRA_FAST = 0,
     FAST = 1,
     NORMAL = 2,
-    SLOW =3
+    SLOW = 3
 }
 
 enum TrillMode {
@@ -22,22 +22,21 @@ enum TrillDevice {
     TRILL_FLEX = 6
 };
 
-//% weight=29 color=#444444 icon="\uf0a6" block="Trill"
-namespace Trill{
+namespace Trill {
 
-    enum MaxTouchNum{
+    enum MaxTouchNum {
         k1D = 5,
         k2D = 4
     };
-    
-    enum Length{
+
+    enum Length {
         kCentroidDefault = 20,
         kCentroidRing = 24,
         kCentroid2D = 32,
         kRaw = 60
     };
-    
-    enum Command{
+
+    enum Command {
         kNone = 0,
         kMode = 1,
         kScanSettings = 2,
@@ -49,8 +48,8 @@ namespace Trill{
         kAutoScanInterval = 16,
         kIdentify = 255
     };
-    
-    enum Offset{
+
+    enum Offset {
         kCommand = 0,
         kData = 4
     };
@@ -66,21 +65,6 @@ namespace Trill{
     let rawData: Buffer;
     let touchData: number[];
 
-
-    /**
-     *initialize the Trill device
-     *@param touchDevice [1-6] the device type
-     *@param speed [0-3] the detect speed of the device
-     *@param touchMode [-1-3] the touch mode of the device
-     *@param numBits [9-16] the resolution of the device
-     *@param prescaler [1-8] the sensitivity of the device
-     *@param threshold [0-255] the noise threshold of the device
-    */
-    //%block="set up %touchDevice in mode %touchMode with speed %speed resolution %numBits prescaler x%prescaler noise threshold %threshold"
-    //%weight=31 %blockID="setup Trill"
-    //% numBits.min=9 numBits.max=16 numBits.defl=12
-    //% prescaler.min=1 prescaler.max=8 prescaler.defl=1
-    //% threshold.min=0 threshold.max=255 threshold.defl=16
     export function init(
         touchDevice: TrillDevice,
         touchMode: TrillMode,
@@ -100,20 +84,14 @@ namespace Trill{
         else {
             setMode(touchMode);
         }
-
+        i2cWriteCommand(Command.kMode, mode);
+        
         rawData = pins.createBuffer(Length.kRaw);
         touchData = [0x0001];
-        // TODO: set 2D device
-        // if(is2D()) {
-        //     horizontal.centroids = buffer_ + 2 * MAX_TOUCH_1D_OR_2D;
-        //     horizontal.sizes = buffer_ + 3 * MAX_TOUCH_1D_OR_2D;
-        // } else
-        //     horizontal.num_touches = 0;
 
-        // Set default scan settings 
         setScanSettings(speed, numBits);
 
-        setPrescaler(prescaler);
+        // setPrescaler(prescaler);
 
         setNoiseThreshold(threshold);
 
@@ -122,14 +100,10 @@ namespace Trill{
         numTouch = 0;
     }
 
-    /**
-     *read the data from device
-    */
-    //%block="read data from Trill"
-    //%weight=31 %blockID="number of touch points"
+
     export function read(): void {
         if (mode == TrillMode.CENTROID) {
-            
+
             if (state == Offset.kCommand) {
                 i2cWriteCommand(Offset.kData);
                 state = Offset.kData;
@@ -139,92 +113,43 @@ namespace Trill{
 
             if (device == TrillDevice.TRILL_SQUARE || device == TrillDevice.TRILL_HEX) { length = Length.kCentroid2D; }
             if (device == TrillDevice.TRILL_RING) { length = Length.kCentroidRing; }
-            
-            rawData = pins.i2cReadBuffer(address, length, false);
+
+            rawData = pins.i2cReadBuffer(address, length + 4, false);
 
             let loc = 0;
 
             // Convert raw data to 16-bit values
-            while(loc <= length) {
-                touchData[loc] = (rawData[loc] << 8) + rawData[loc+1];
-                loc+=2;
+            while (loc <= length) {
+                touchData[loc] = (rawData[2*loc + 4] << 8) + rawData[2*loc + 5];
+                loc++;
             }
-            
+
             // Look for 1st instance of 0xFFFF (no touch) in the buffer
-            for(numTouch = 0; numTouch < maxTouch; ++numTouch)
-            {
-                if(0xffff == touchData[numTouch])
+            for (numTouch = 0; numTouch < maxTouch; ++numTouch) {
+                if (touchData[numTouch + maxTouch] < 2000)
+                    break;// at the first non-touch, break
+                if (touchData[numTouch] > 65500)
                     break;// at the first non-touch, break
             }
 
-            // TODO: fix 2D device
-            // if(is2D())
-            //     horizontal.processCentroids(maxTouch);
         }
     }
 
-
-    /**
-     *Get the raw of the touch points from index 0 to max
-     *@param index [0-100] the index of the touch point
-    */
-    //%block="raw data |%index|"
-    //%weight=399 %blockID="touch raw"
-    export function raw(index: number):  number {
-        
-        return rawData[index];
-        
-    }
-
-
-    /**
-     *Get the location of the touch points from index 0 to max
-     *@param index [0-4] the index of the touch point
-    */
-    //%block="location of touch point |%index|"
-    //%weight=34 %blockID="touch Coordinate"
-    //% index.min=0 index.max=4
     export function touchCoordinate(index: number): number {
-        if (index <= numTouch) {
-            return touchData[index];
-        }
-        else {
-            return -1;
-        }
+        if (index < numTouch) { return touchData[index]; }
+        else { return 65535; }
+        
     }
 
-    /**
-     *Get the size of the touch points from index 0 to max
-     *@param index [0-4] the index of the touch point
-    */
-    //%block="size of touch point |%index|"
-    //%weight=35 %blockID="touch size"
-    //% index.min=0 index.max=4
     export function touchSize(index: number): number {
-        if (index <= numTouch) {
-            return touchData[index];
-        }
-        else {
-            return -1;
-        }
+        if (index < numTouch) { return touchData[index + maxTouch]; }
+        else { return 0; }
     }
 
-
-
-    /**
-     *update the baseline of device
-    */
-    //%block="update touch baseline"
-    //% weight=32 %blockID="update topuch baseline"
     export function updateBaseline(): void {
         i2cWriteCommand(Command.kBaselineUpdate);
     }
 
-    /**
-     *read the number of touch points
-    */
-    //%block="number of touch points"
-    //%weight=33 %blockID="number of touch points"
     export function numTouchRead(): number {
         return numTouch;
     }
@@ -253,7 +178,7 @@ namespace Trill{
         pins.i2cWriteBuffer(address, buf);
         state = Offset.kCommand;
         basic.pause(commandDelay);
-    } 
+    }
 
     function defaultSet(): void {
         switch (device) {
@@ -312,39 +237,37 @@ namespace Trill{
     function setPrescaler(prescaler: number): void {
         i2cWriteCommand(Command.kPrescaler, prescaler);
     }
-    
+
     function setNoiseThreshold(threshold: number): void {
-        if(threshold > 255)
+        if (threshold > 255)
             threshold = 255;
-        if(threshold < 0)
+        if (threshold < 0)
             threshold = 0;
         i2cWriteCommand(Command.kNoiseThreshold, threshold);
     }
-    
+
     function setIDACValue(value: number): void {
         i2cWriteCommand(Command.kIdac, value);
     }
-    
-    function setMinimumTouchSize(size: number): void {      
+
+    function setMinimumTouchSize(size: number): void {
         i2cWriteCommand(Command.kMinimumSize, (size >> 8), (size & 0xFF));
     }
-    
-    function setAutoScanInterval(interval: number): void {      
+
+    function setAutoScanInterval(interval: number): void {
         i2cWriteCommand(Command.kAutoScanInterval, (interval >> 8), (interval & 0xFF));
     }
 
     function getButtonValue(): number {
-        if ((mode != TrillMode.CENTROID) || (device != TrillDevice.TRILL_RING))
-        { return -1; }
-        else
-        { return 0; }
+        if ((mode != TrillMode.CENTROID) || (device != TrillDevice.TRILL_RING)) { return -1; }
+        else { return 0; }
         // { return buffer_[2 * maxTouch]; }
     }
-    
+
     function is1D(): boolean {
-        if(mode != TrillMode.CENTROID)
+        if (mode != TrillMode.CENTROID)
             return false;
-        switch(device) {
+        switch (device) {
             case TrillDevice.TRILL_BAR:
             case TrillDevice.TRILL_RING:
             case TrillDevice.TRILL_CRAFT:
@@ -356,7 +279,7 @@ namespace Trill{
     }
 
     function is2D(): boolean {
-        switch(device) {
+        switch (device) {
             case TrillDevice.TRILL_SQUARE:
             case TrillDevice.TRILL_HEX:
                 return true;

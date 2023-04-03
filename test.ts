@@ -3,30 +3,22 @@
 
 Trill.init(
     TrillDevice.TRILL_BAR,
-    TrillSpeed.ULTRA_FAST,
     TrillMode.AUTO,
+    TrillSpeed.ULTRA_FAST,
     12,
     1,
-    10
+    150
 ) 
 
 basic.forever(function () {
     Trill.read();
-
-    let touch = Trill.numTouchRead();
-    serial.writeValue("touch", touch);
-    
-    for (let j = 0; j <= touch; j++) {
-        let loc = Trill.touchCoordinate(j);
-        let size = Trill.touchSize(j);
-
-        serial.writeString("touch")
+    let num = Trill.numTouchRead()
+    for (let j = 0; j <= num; j++) {
         serial.writeNumber(j)
-        serial.writeValue(": location ", loc)
-
-        serial.writeString("size")
+        serial.writeValue("r", Trill.touchCoordinate(j))
         serial.writeNumber(j)
-        serial.writeValue("", size)
+        serial.writeValue("s", Trill.touchSize(j))
     }
-    basic.pause(1);
+    serial.writeValue("num", num)
+    basic.pause(3)
 })
