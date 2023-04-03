@@ -83,8 +83,8 @@ namespace Trill{
     //% threshold.min=0 threshold.max=255 threshold.defl=16
     export function init(
         touchDevice: TrillDevice,
-        speed: TrillSpeed,
         touchMode: TrillMode,
+        speed: TrillSpeed,
         numBits: number,
         prescaler: number,
         threshold: number
